@@ -27,6 +27,7 @@ public class MessageTemplate {
     private Integer msgType; // 10: notification, 20: marketing, 30: verification
     private String expectPushTime; // cron expression
     private String msgContent;
+    private String dedupeKeyExpression; // SpEL expression for deduplication key
     private Integer sendAccount;
     private String creator;
     private String updator;

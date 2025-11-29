@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS message_template (
     msg_type TINYINT DEFAULT 0 COMMENT '10: notification, 20: marketing, 30: verification',
     expect_push_time VARCHAR(100) COMMENT 'cron expression',
     msg_content VARCHAR(1024) NOT NULL,
+    dedupe_key_expression VARCHAR(255),
     send_account INT DEFAULT 0,
     creator VARCHAR(50),
     updator VARCHAR(50),

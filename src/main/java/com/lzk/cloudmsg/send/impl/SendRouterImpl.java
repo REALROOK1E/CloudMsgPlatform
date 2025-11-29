@@ -5,6 +5,8 @@ import com.lzk.cloudmsg.send.Channel;
 import com.lzk.cloudmsg.send.LoadBalancer;
 import com.lzk.cloudmsg.send.SendRouter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreaker;
+import org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreakerFactory;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
@@ -17,6 +19,7 @@ public class SendRouterImpl implements SendRouter {
 
     private final List<Channel> channels;
     private final LoadBalancer loadBalancer;
+    private final ReactiveCircuitBreakerFactory circuitBreakerFactory;
 
     @PostConstruct
     public void init() {
@@ -32,7 +35,14 @@ public class SendRouterImpl implements SendRouter {
         
         if (channel != null) {
             messageRecord.setChannelName(channel.getName());
-            return channel.send(messageRecord);
+            
+            // Wrap with Circuit Breaker
+            ReactiveCircuitBreaker rcb = circuitBreakerFactory.create(channel.getName());
+            
+            return rcb.run(channel.send(messageRecord), throwable -> {
+                // Fallback logic
+                return Mono.error(new RuntimeException("Channel " + channel.getName() + " is unavailable or timed out: " + throwable.getMessage()));
+            });
         } else {
             return Mono.error(new RuntimeException("No channel found for type: " + channelType));
         }
